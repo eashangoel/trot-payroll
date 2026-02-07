@@ -8,7 +8,7 @@ import SummaryTable from './components/SummaryTable';
 import { parseFile, parseAttendanceSheet, parseSalarySheet } from './utils/fileParser';
 import { crossValidateEmployees, validateParsedData } from './utils/validators';
 import { calculateNetSalary, formatDate } from './utils/salaryCalculator';
-import { generatePayslipBlob } from './utils/pdfGenerator';
+import { generateExcelPayslipBlob } from './utils/excelGenerator';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
 
@@ -172,8 +172,8 @@ function App() {
       const zip = new JSZip();
       
       for (const calc of calculations) {
-        const pdfBlob = generatePayslipBlob(calc);
-        zip.file(`${calc.employeeName}_Payslip.pdf`, pdfBlob);
+        const excelBlob = generateExcelPayslipBlob(calc);
+        zip.file(`${calc.employeeName}_Payslip.xlsx`, excelBlob);
       }
       
       const zipBlob = await zip.generateAsync({ type: 'blob' });

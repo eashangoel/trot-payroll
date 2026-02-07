@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { formatCurrency } from '../utils/salaryCalculator';
-import { downloadPayslip } from '../utils/pdfGenerator';
+import { downloadExcelPayslip } from '../utils/excelGenerator';
 
 const SummaryTable = ({ calculations, onDownloadAll, onExportExcel }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -172,10 +172,10 @@ const SummaryTable = ({ calculations, onDownloadAll, onExportExcel }) => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <button
-                      onClick={() => downloadPayslip(calc)}
+                      onClick={() => downloadExcelPayslip(calc)}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                     >
-                      Download PDF
+                      Download Excel
                     </button>
                   </td>
                 </tr>

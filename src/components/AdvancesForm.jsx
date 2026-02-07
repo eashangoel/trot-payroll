@@ -1,7 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const AdvancesForm = ({ selectedEmployee, advances, onAdvancesChange }) => {
   const [entries, setEntries] = useState(advances[selectedEmployee] || []);
+  
+  // Update entries when selected employee changes
+  useEffect(() => {
+    setEntries(advances[selectedEmployee] || []);
+  }, [selectedEmployee, advances]);
   
   const addEntry = () => {
     const newEntry = { date: '', amount: '' };
@@ -28,12 +33,6 @@ const AdvancesForm = ({ selectedEmployee, advances, onAdvancesChange }) => {
       const amount = parseFloat(entry.amount) || 0;
       return sum + amount;
     }, 0);
-  };
-  
-  // Update entries when selected employee changes
-  if (selectedEmployee && entries !== (advances[selectedEmployee] || [])) {
-    const employeeAdvances = advances[selectedEmployee] || [];
-    setEntries(employeeAdvances);
   }
   
   if (!selectedEmployee) {
