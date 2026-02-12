@@ -35,9 +35,8 @@ const IncentiveFileUpload = ({ onFilesUploaded, onError }) => {
 2026-01-15,4430,322,12339,33596,1-115,114`;
       filename = 'sample_sales_sheet.csv';
     } else if (type === 'attendance') {
-      // Sample attendance sheet based on provided format
+      // Sample attendance sheet based on provided format (Date column only, no Day)
       content = `Date,Vikas,Aliush,Mohan,Atik,Suman,Jai
-01/01/2026,X,A,X,X,X,X
 01/02/2026,P,A,P,P,P,P
 01/03/2026,P,A,P,P,P,P
 01/04/2026,P,A,P,P,P,P

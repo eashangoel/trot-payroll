@@ -222,6 +222,133 @@ export const getMonthName = (month) => {
 };
 
 /**
+ * Parses attendance sheet for incentive calculator (only needs Date column)
+ * @param {Array} data - Raw data from parsed Excel/CSV (2D array)
+ * @returns {Object} - { employees: Map, dates: Array, month: string, year: string }
+ */
+export const parseIncentiveAttendanceSheet = (data) => {
+  if (!data || data.length < 2) {
+    throw new Error('Attendance sheet is empty or invalid');
+  }
+  
+  // Find the header row (should contain "Date" in first column)
+  let headerRowIndex = -1;
+  for (let i = 0; i < Math.min(data.length, 10); i++) {
+    const row = data[i];
+    if (row[0] && row[0].toString().toLowerCase().includes('date')) {
+      headerRowIndex = i;
+      break;
+    }
+  }
+  
+  if (headerRowIndex === -1) {
+    throw new Error('Could not find header row with "Date" column');
+  }
+  
+  const headerRow = data[headerRowIndex];
+  const dataRows = data.slice(headerRowIndex + 1);
+  
+  // Extract employee names from columns 1 onwards (skip Date column)
+  const employees = new Map();
+  const employeeColumns = [];
+  
+  for (let colIndex = 1; colIndex < headerRow.length; colIndex++) {
+    const employeeName = headerRow[colIndex];
+    
+    // Skip empty columns or columns with "XXXX" or similar placeholder names
+    if (!employeeName || 
+        employeeName.toString().trim() === '' || 
+        /^x+$/i.test(employeeName.toString().trim())) {
+      continue;
+    }
+    
+    employeeColumns.push({ name: employeeName.toString().trim(), colIndex });
+    employees.set(employeeName.toString().trim(), []);
+  }
+  
+  // Extract dates and attendance data
+  const dates = [];
+  let detectedMonth = null;
+  let detectedYear = null;
+  
+  for (const row of dataRows) {
+    const dateValue = row[0];
+    
+    if (!dateValue || dateValue.toString().trim() === '') {
+      continue;
+    }
+    
+    // Parse date (expecting DD/MM/YYYY or MM/DD/YYYY format or Excel date number)
+    let parsedDate;
+    if (typeof dateValue === 'number') {
+      // Excel date number
+      parsedDate = XLSX.SSF.parse_date_code(dateValue);
+    } else {
+      // String date
+      const dateStr = dateValue.toString().trim();
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        // Detect format based on first number
+        const first = parseInt(parts[0]);
+        const second = parseInt(parts[1]);
+        
+        // If first number > 12, it must be DD/MM/YYYY
+        // If second number > 12, it must be MM/DD/YYYY
+        if (first > 12) {
+          parsedDate = {
+            d: first,
+            m: second,
+            y: parseInt(parts[2])
+          };
+        } else if (second > 12) {
+          parsedDate = {
+            m: first,
+            d: second,
+            y: parseInt(parts[2])
+          };
+        } else {
+          // Ambiguous - assume MM/DD/YYYY
+          parsedDate = {
+            m: first,
+            d: second,
+            y: parseInt(parts[2])
+          };
+        }
+      }
+    }
+    
+    if (!parsedDate) {
+      continue;
+    }
+    
+    // Set month and year from first valid date
+    if (!detectedMonth) {
+      detectedMonth = parsedDate.m;
+      detectedYear = parsedDate.y;
+    }
+    
+    const formattedDate = `${String(parsedDate.d).padStart(2, '0')}/${String(parsedDate.m).padStart(2, '0')}/${parsedDate.y}`;
+    dates.push(formattedDate);
+    
+    // Extract attendance for each employee
+    for (const { name, colIndex } of employeeColumns) {
+      const attendance = row[colIndex] ? row[colIndex].toString().trim().toUpperCase() : '';
+      employees.get(name).push({
+        date: formattedDate,
+        marker: attendance || 'A' // Default to absent if empty
+      });
+    }
+  }
+  
+  return {
+    employees,
+    dates,
+    month: detectedMonth,
+    year: detectedYear
+  };
+};
+
+/**
  * Gets the number of days in a month
  * @param {number} month - Month number (1-12)
  * @param {number} year - Year

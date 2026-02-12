@@ -3,7 +3,7 @@ import IncentiveFileUpload from './components/IncentiveFileUpload';
 import SlabForm from './components/SlabForm';
 import IncentiveDailyTable from './components/IncentiveDailyTable';
 import IncentiveMonthlyTable from './components/IncentiveMonthlyTable';
-import { parseFile, parseAttendanceSheet } from './utils/fileParser';
+import { parseFile, parseIncentiveAttendanceSheet } from './utils/fileParser';
 import { parseSalesSheet, getMonthName } from './utils/salesParser';
 import { calculateIncentives, validateSlabs } from './utils/incentiveCalculator';
 import { validateParsedData } from './utils/validators';
@@ -42,7 +42,7 @@ function IncentiveApp() {
       const salesParsed = parseSalesSheet(salesFileData.data);
       
       // Parse attendance sheet
-      const attendanceParsed = parseAttendanceSheet(attendanceFileData.data);
+      const attendanceParsed = parseIncentiveAttendanceSheet(attendanceFileData.data);
       
       // Validate attendance data
       const attendanceValidation = validateParsedData(attendanceParsed, 'attendance');
