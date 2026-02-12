@@ -313,6 +313,7 @@ function IncentiveApp() {
             dailyData={results.dailyData}
             month={parsedData.month}
             year={parsedData.year}
+            employeeNames={results.employeeNames}
           />
           
           <IncentiveMonthlyTable

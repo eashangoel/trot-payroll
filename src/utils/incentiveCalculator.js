@@ -96,6 +96,8 @@ export const calculateIncentives = (salesData, attendanceData, slabs) => {
     
     // Calculate per person incentive
     let perPerson = 0;
+    const employeeBreakdown = {}; // Track individual employee incentives for this day
+    
     if (presentCount > 0 && pool > 0) {
       perPerson = pool / presentCount;
       
@@ -106,17 +108,26 @@ export const calculateIncentives = (salesData, attendanceData, slabs) => {
           empData.daysPresent += 1;
           empData.totalIncentive += perPerson;
         }
+        employeeBreakdown[employeeName] = perPerson;
       });
     }
     
-    // Store daily result
+    // Set 0 for all employees not present
+    employeeNames.forEach(employeeName => {
+      if (!employeeBreakdown[employeeName]) {
+        employeeBreakdown[employeeName] = 0;
+      }
+    });
+    
+    // Store daily result with employee breakdown
     dailyData.push({
       date,
       netSales,
       slabApplied,
       pool,
       presentCount,
-      perPerson
+      perPerson,
+      employeeBreakdown
     });
   });
   
@@ -146,7 +157,8 @@ export const calculateIncentives = (salesData, attendanceData, slabs) => {
   return {
     dailyData,
     monthlyData,
-    warnings
+    warnings,
+    employeeNames // Return employee names in attendance sheet order
   };
 };
 

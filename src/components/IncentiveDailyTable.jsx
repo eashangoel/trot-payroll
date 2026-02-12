@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { formatCurrency } from '../utils/incentiveCalculator';
 import { exportDailyCSV } from '../utils/csvExporter';
 
-const IncentiveDailyTable = ({ dailyData, month, year }) => {
+const IncentiveDailyTable = ({ dailyData, month, year, employeeNames }) => {
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'asc' });
   
   const handleSort = (key) => {
@@ -71,7 +71,7 @@ const IncentiveDailyTable = ({ dailyData, month, year }) => {
   
   const handleExport = () => {
     try {
-      exportDailyCSV(dailyData, month, year);
+      exportDailyCSV(dailyData, month, year, employeeNames);
     } catch (err) {
       console.error('Failed to export CSV:', err);
       alert('Failed to export CSV. Please try again.');
@@ -82,6 +82,16 @@ const IncentiveDailyTable = ({ dailyData, month, year }) => {
   const totalNetSales = dailyData.reduce((sum, day) => sum + day.netSales, 0);
   const totalPool = dailyData.reduce((sum, day) => sum + day.pool, 0);
   const totalPresent = dailyData.reduce((sum, day) => sum + day.presentCount, 0);
+  
+  // Calculate employee totals
+  const employeeTotals = {};
+  if (employeeNames) {
+    employeeNames.forEach(name => {
+      employeeTotals[name] = dailyData.reduce((sum, day) => {
+        return sum + (day.employeeBreakdown?.[name] || 0);
+      }, 0);
+    });
+  }
   
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
@@ -115,7 +125,7 @@ const IncentiveDailyTable = ({ dailyData, month, year }) => {
             <tr>
               <th
                 onClick={() => handleSort('date')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 sticky left-0 bg-gray-50 z-10"
               >
                 <div className="flex items-center space-x-1">
                   <span>Date</span>
@@ -167,12 +177,21 @@ const IncentiveDailyTable = ({ dailyData, month, year }) => {
                   {getSortIcon('perPerson')}
                 </div>
               </th>
+              {/* Employee columns */}
+              {employeeNames && employeeNames.map((employeeName) => (
+                <th
+                  key={employeeName}
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-indigo-50"
+                >
+                  {employeeName}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {sortedData.map((day, index) => (
               <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-inherit">
                   {day.date}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
@@ -200,12 +219,27 @@ const IncentiveDailyTable = ({ dailyData, month, year }) => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">
                   {formatCurrency(day.perPerson)}
                 </td>
+                {/* Employee breakdown columns */}
+                {employeeNames && employeeNames.map((employeeName) => {
+                  const amount = day.employeeBreakdown?.[employeeName] || 0;
+                  const isPresent = amount > 0;
+                  return (
+                    <td
+                      key={employeeName}
+                      className={`px-4 py-4 whitespace-nowrap text-sm font-medium text-center ${
+                        isPresent ? 'bg-green-50 text-green-700' : 'text-gray-400'
+                      }`}
+                    >
+                      {formatCurrency(amount)}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>
           <tfoot className="bg-gray-100">
             <tr>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 sticky left-0 bg-gray-100">
                 Total ({sortedData.length} days)
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
@@ -223,6 +257,15 @@ const IncentiveDailyTable = ({ dailyData, month, year }) => {
               <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                 -
               </td>
+              {/* Employee totals */}
+              {employeeNames && employeeNames.map((employeeName) => (
+                <td
+                  key={employeeName}
+                  className="px-4 py-4 whitespace-nowrap text-sm font-bold text-center text-gray-900"
+                >
+                  {formatCurrency(employeeTotals[employeeName] || 0)}
+                </td>
+              ))}
             </tr>
           </tfoot>
         </table>

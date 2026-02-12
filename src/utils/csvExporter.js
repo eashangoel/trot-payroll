@@ -5,39 +5,75 @@ import { getMonthName } from './salesParser';
  * @param {Array} dailyData - Array of daily calculations
  * @param {number} month - Month number
  * @param {number} year - Year
+ * @param {Array} employeeNames - Array of employee names in order
  */
-export const exportDailyCSV = (dailyData, month, year) => {
+export const exportDailyCSV = (dailyData, month, year, employeeNames = []) => {
   if (!dailyData || dailyData.length === 0) {
     throw new Error('No data to export');
   }
   
-  // Create CSV header
+  // Create CSV header with employee columns
   const headers = ['Date', 'Net Sales', 'Slab Applied', 'Pool Amount', 'Present Count', 'Per Person Incentive'];
   
+  // Add employee name headers
+  if (employeeNames.length > 0) {
+    headers.push(...employeeNames);
+  }
+  
   // Create CSV rows
-  const rows = dailyData.map(day => [
-    day.date,
-    day.netSales.toFixed(2),
-    day.slabApplied,
-    day.pool.toFixed(2),
-    day.presentCount,
-    day.perPerson.toFixed(2)
-  ]);
+  const rows = dailyData.map(day => {
+    const row = [
+      day.date,
+      day.netSales.toFixed(2),
+      day.slabApplied,
+      day.pool.toFixed(2),
+      day.presentCount,
+      day.perPerson.toFixed(2)
+    ];
+    
+    // Add employee incentives
+    if (employeeNames.length > 0) {
+      employeeNames.forEach(name => {
+        row.push((day.employeeBreakdown?.[name] || 0).toFixed(2));
+      });
+    }
+    
+    return row;
+  });
   
   // Calculate totals
   const totalNetSales = dailyData.reduce((sum, day) => sum + day.netSales, 0);
   const totalPool = dailyData.reduce((sum, day) => sum + day.pool, 0);
   const totalPresent = dailyData.reduce((sum, day) => sum + day.presentCount, 0);
   
+  // Calculate employee totals
+  const employeeTotals = {};
+  if (employeeNames.length > 0) {
+    employeeNames.forEach(name => {
+      employeeTotals[name] = dailyData.reduce((sum, day) => {
+        return sum + (day.employeeBreakdown?.[name] || 0);
+      }, 0);
+    });
+  }
+  
   // Add total row
-  rows.push([
+  const totalRow = [
     'TOTAL',
     totalNetSales.toFixed(2),
     '',
     totalPool.toFixed(2),
     totalPresent,
     ''
-  ]);
+  ];
+  
+  // Add employee totals
+  if (employeeNames.length > 0) {
+    employeeNames.forEach(name => {
+      totalRow.push(employeeTotals[name].toFixed(2));
+    });
+  }
+  
+  rows.push(totalRow);
   
   // Convert to CSV string
   const csvContent = [
